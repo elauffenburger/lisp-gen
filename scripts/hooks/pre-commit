@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+
+set -o errexit -o pipefail
+
+dotnet build && dotnet test || exit 1
+
+if dotnet format --verbosity normal | grep 'Formatted code file'; then
+    echo 'files modified; exiting'
+    exit 1
+fi
+
+exit 0
