@@ -1,3 +1,5 @@
+using System.Diagnostics;
+using System.Net;
 using System.Text;
 
 using CliFx;
@@ -11,6 +13,9 @@ public class ReplCommand : ICommand
 {
     private readonly Parser _parser;
 
+    [CommandOption("debug")]
+    public bool Debug { get; init; }
+
     public ReplCommand(Parser parser)
     {
         _parser = parser;
@@ -18,6 +23,15 @@ public class ReplCommand : ICommand
 
     public async ValueTask ExecuteAsync(IConsole console)
     {
+        if (Debug)
+        {
+            while (!Debugger.IsAttached)
+            {
+                await console.Output.WriteLineAsync("waiting for debugger...");
+                await Task.Delay(TimeSpan.FromSeconds(1));
+            }
+        }
+
         while (true)
         {
             var line = await console.Input.ReadLineAsync();
@@ -43,7 +57,8 @@ public class ReplCommand : ICommand
                 }
             }
 
-            _parser.Parse(line);
+            var parsed = _parser.Parse(line);
+            await console.Output.WriteLineAsync(parsed.ToString());
         }
     }
 }
@@ -58,7 +73,23 @@ public record NumberExpr(float Value) : Expression { }
 
 public record QuotedExpr(Expression Expression) : Expression { }
 
-public record ListExpr(IEnumerable<Expression> Expressions) : Expression { }
+public record ListExpr(IEnumerable<Expression> Expressions) : Expression
+{
+    public override string ToString()
+    {
+        var str = new StringBuilder();
+        str.Append("{ ");
+
+        foreach (var expr in Expressions)
+        {
+            str.Append($"{expr.ToString()} ");
+        }
+
+        str.Append('}');
+
+        return str.ToString();
+    }
+}
 
 public class Parser
 {
@@ -70,52 +101,31 @@ public class Parser
         _input = input;
         _index = 0;
 
-        return ParseExpression();
+        return ParseExpression()!;
     }
 
-    private Expression ParseExpression()
+    private Expression ParseListExpression()
     {
         var list = new List<Expression>();
 
-        for (var ch = Next(); ch != null; ch = Next())
+        var next = Next();
+        if (next != '(')
         {
-            Expression? expr = null;
-            switch (ch)
+            throw new Exception();
+        }
+
+        for (var ch = PeekNext(); ch != null; ch = PeekNext())
+        {
+            if (ch == ')')
             {
-                case '(':
-                    expr = ParseExpression();
-                    break;
-
-                case ')':
-                    return new ListExpr(list);
-
-                case '\'':
-                    expr = new QuotedExpr(ParseExpression());
-                    break;
-
-                case '"':
-                    expr = ParseStringExpr();
-                    break;
-
-                default:
-                    if (char.IsAsciiDigit(ch.Value))
-                    {
-                        expr = ParseNumberExpr();
-                        break;
-                    }
-
-                    if (char.IsAsciiLetter(ch.Value))
-                    {
-                        expr = ParseAtom();
-                        break;
-                    }
-
-                    throw new Exception();
+                Next();
+                break;
             }
 
+            var expr = ParseExpression();
             if (expr == null)
             {
-                throw new Exception();
+                break;
             }
 
             list.Add(expr);
@@ -124,11 +134,56 @@ public class Parser
         return new ListExpr(list);
     }
 
+    private Expression? ParseExpression()
+    {
+        char? ch;
+        for (ch = PeekNext(); ch != null && ch.Value == ' '; ch = PeekNext())
+        {
+            Next();
+        }
+
+        if (ch == null)
+        {
+            return null;
+        }
+
+        switch (ch.Value)
+        {
+            case '(':
+                return ParseListExpression();
+
+            case '\'':
+                return new QuotedExpr(ParseExpression()!);
+
+            case '"':
+                return ParseStringExpr();
+
+            default:
+                if (char.IsAsciiDigit(ch.Value))
+                {
+                    return ParseNumberExpr();
+                }
+
+                if (char.IsAsciiLetter(ch.Value))
+                {
+                    return ParseAtom();
+                }
+
+                throw new Exception();
+        }
+    }
+
     private StringExpr ParseStringExpr()
     {
         var str = new StringBuilder();
 
-        for (var ch = PeekNext(); ch != null; ch = PeekNext())
+        var ch = Next()!;
+        if (ch != '"')
+        {
+            throw new Exception();
+        }
+
+        for (ch = PeekNext(); ch != null; ch = PeekNext())
         {
             switch (ch)
             {
@@ -180,20 +235,20 @@ public class Parser
     private NumberExpr ParseNumberExpr()
     {
         var numStr = new StringBuilder();
-        for (var ch = PeekNext(); ch != null; ch = PeekNext())
+        for (var ch = Next(); ch != null; ch = Next())
         {
             if (char.IsAsciiDigit(ch.Value) || ch == '.')
             {
-                numStr.Append(Next());
+                numStr.Append(ch);
                 continue;
             }
 
-            if (ch == ' ')
+            if (ch == ' ' || ch == ')')
             {
                 break;
             }
 
-            throw new Exception();
+            throw new Exception($"{ch}");
         }
 
         return new NumberExpr(float.Parse(numStr.ToString()));
@@ -221,6 +276,6 @@ public class Parser
             return null;
         }
 
-        return _input[_index + 1];
+        return _input[_index];
     }
 }
