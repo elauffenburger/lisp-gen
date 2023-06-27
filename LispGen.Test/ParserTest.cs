@@ -22,9 +22,25 @@ public class ParserTest
     [Fact]
     public void Test_Simple()
     {
-        _parser.Parse("""
+        var parsed = _parser.Parse("""
             (foo (bar 1 (baz 2.3)))
         """
+        );
+
+        Assert.Equal(
+            new ListExpr(new Expression[] {
+                new AtomExpr("foo"),
+                new ListExpr(new Expression[] {
+                    new AtomExpr("bar"),
+                    new NumberExpr(1),
+                    new ListExpr(new Expression[] {
+                        new AtomExpr("baz"),
+                        new NumberExpr(2.3f)
+                    })
+                })
+            }),
+            parsed,
+            new ExpressionEqualityComparer()
         );
     }
 }
