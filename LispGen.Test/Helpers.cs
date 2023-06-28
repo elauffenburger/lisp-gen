@@ -3,9 +3,9 @@ using System.Reflection.Metadata.Ecma335;
 
 namespace LispGen.Test;
 
-public class ExpressionEqualityComparer : IEqualityComparer<Expression>
+public class ExpressionEqualityComparer : IEqualityComparer<IExpression>
 {
-    public bool Equals(Expression? x, Expression? y)
+    public bool Equals(IExpression? x, IExpression? y)
     {
         if (x == null && y == null)
         {
@@ -29,5 +29,5 @@ public class ExpressionEqualityComparer : IEqualityComparer<Expression>
         };
     }
 
-    public int GetHashCode([DisallowNull] Expression obj) => obj.GetHashCode();
+    public int GetHashCode([DisallowNull] IExpression obj) => obj.GetHashCode();
 }

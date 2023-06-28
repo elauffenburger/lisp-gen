@@ -28,14 +28,14 @@ public class ParserTest
         );
 
         Assert.Equal(
-            new ListExpr(new Expression[] {
+            new ListExpr(new IExpression[] {
                 new AtomExpr("foo"),
-                new ListExpr(new Expression[] {
+                new ListExpr(new IExpression[] {
                     new AtomExpr("bar"),
-                    new NumberExpr(1),
-                    new ListExpr(new Expression[] {
+                    new NumExpr(1),
+                    new ListExpr(new IExpression[] {
                         new AtomExpr("baz"),
-                        new NumberExpr(2.3f)
+                        new NumExpr(2.3f)
                     })
                 })
             }),
