@@ -4,12 +4,18 @@ public class Executor
 {
     public IExpression Execute(Scope scope, IExpression expr)
     {
-        return expr switch
+        var result = expr switch
         {
             QuotedExpr(var inner) => inner,
             ListExpr list => ExecuteListExpr(scope, list),
-            AtomExpr atom => scope.TryGetValueRecursively(atom.Name, out var result) ? result! : NullExpr.Instance,
+            AtomExpr atom => scope.TryGetValueRecursively(atom.Name, out var val) ? val! : NullExpr.Instance,
             _ => expr
+        };
+
+        return result switch
+        {
+            ListExpr list => Execute(scope, list),
+            _ => result
         };
     }
 
