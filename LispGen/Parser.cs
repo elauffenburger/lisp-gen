@@ -45,43 +45,41 @@ public class Parser
         return new ListExpr(list);
     }
 
-    private IExpression? ParseExpression()
+    private char? ChompWhitespace()
     {
         char? ch;
-        for (ch = PeekNext(); ch != null && ch.Value == ' '; ch = PeekNext())
+        for (ch = PeekNext(); ch != null && (ch.Value == ' ' || ch.Value == '\n'); ch = PeekNext())
         {
             Next();
         }
 
+        return ch;
+    }
+
+    private IExpression? ParseExpression()
+    {
+        var ch = ChompWhitespace();
         if (ch == null)
         {
             return null;
         }
 
-        switch (ch.Value)
+        var result = ch.Value switch
         {
-            case '(':
-                return ParseListExpression();
+            '(' => ParseListExpression(),
+            '\'' => new QuotedExpr(ParseExpression()!),
+            '"' => ParseStringExpr(),
+            var c =>
+                char.IsAsciiDigit(c)
+                    ? ParseNumberExpr()
+                    : char.IsAsciiLetter(ch.Value)
+                        ? ParseAtom()
+                        : throw new Exception(),
+        };
 
-            case '\'':
-                return new QuotedExpr(ParseExpression()!);
+        ChompWhitespace();
 
-            case '"':
-                return ParseStringExpr();
-
-            default:
-                if (char.IsAsciiDigit(ch.Value))
-                {
-                    return ParseNumberExpr();
-                }
-
-                if (char.IsAsciiLetter(ch.Value))
-                {
-                    return ParseAtom();
-                }
-
-                throw new Exception();
-        }
+        return result;
     }
 
     private StringExpr ParseStringExpr()
@@ -146,10 +144,11 @@ public class Parser
     private NumExpr ParseNumberExpr()
     {
         var numStr = new StringBuilder();
-        for (var ch = Next(); ch != null; ch = Next())
+        for (var ch = PeekNext(); ch != null; ch = PeekNext())
         {
             if (char.IsAsciiDigit(ch.Value) || ch == '.')
             {
+                Next();
                 numStr.Append(ch);
                 continue;
             }

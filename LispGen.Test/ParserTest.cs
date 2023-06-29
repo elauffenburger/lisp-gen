@@ -2,14 +2,6 @@ namespace LispGen.Test;
 
 using LispGen;
 
-[CollectionDefinition(Collection)]
-public class ParserTestCollectionDefinition : ICollectionFixture<ParserTestCollectionDefinition>
-{
-    public const string Collection = "Parser";
-
-}
-
-[Collection(ParserTestCollectionDefinition.Collection)]
 public class ParserTest
 {
     private readonly Parser _parser;
@@ -24,8 +16,7 @@ public class ParserTest
     {
         var parsed = _parser.Parse("""
             (foo (bar 1 (baz 2.3)))
-        """
-        );
+        """);
 
         Assert.Equal(
             new ListExpr(new IExpression[] {
@@ -43,4 +34,44 @@ public class ParserTest
             new ExpressionEqualityComparer()
         );
     }
+
+    [Fact]
+    public void Test_Let()
+    {
+        var parsed = _parser.Parse("""
+            (do (let ((var1 1) (var2 2))) (let ((var3 3))) var3)
+        """);
+
+        Assert.Equal(
+            new ListExpr(new IExpression[] {
+                new AtomExpr("do"),
+                new ListExpr(new IExpression[] {
+                    new AtomExpr("let"),
+                    new ListExpr(new IExpression[] {
+                        new ListExpr(new IExpression[] {
+                            new AtomExpr("var1"),
+                            new NumExpr(1),
+                        }),
+                        new ListExpr(new IExpression[] {
+                            new AtomExpr("var2"),
+                            new NumExpr(2),
+                        })
+                    })
+                }),
+                new ListExpr(new IExpression[] {
+                    new AtomExpr("let"),
+                    new ListExpr(new IExpression[] {
+                        new ListExpr(new IExpression[] {
+                            new AtomExpr("var3"),
+                            new NumExpr(3),
+                        }),
+                    })
+                }),
+                new AtomExpr("var3"),
+            }),
+            parsed,
+            new ExpressionEqualityComparer()
+        );
+    }
+
 }
