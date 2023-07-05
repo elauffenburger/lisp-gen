@@ -69,6 +69,7 @@ public class Parser
             '(' => ParseListExpression(),
             '\'' => new QuotedExpr(ParseExpression()!),
             '"' => ParseStringExpr(),
+            ';' => ChompCommentAndReparse(),
             var c =>
                 char.IsAsciiDigit(c)
                     ? ParseNumberExpr()
@@ -164,6 +165,22 @@ public class Parser
         return new NumExpr(float.Parse(numStr.ToString()));
     }
 
+    private IExpression? ChompCommentAndReparse()
+    {
+        ChompComment();
+        return ParseExpression();
+    }
+
+    private void ChompComment()
+    {
+        if (Next() != ';')
+        {
+            throw new Exception();
+        }
+
+        ChompUntil('\n');
+    }
+
     private static bool IsAtomCh(char ch) => char.IsAsciiLetter(ch) || char.IsAsciiDigit(ch);
 
     private char? Next()
@@ -187,5 +204,16 @@ public class Parser
         }
 
         return _input[_index];
+    }
+
+    private string? ChompUntil(char needle)
+    {
+        var result = new StringBuilder();
+        for (var ch = PeekNext(); ch != needle; ch = Next())
+        {
+            result.Append(ch);
+        }
+
+        return result.Length == 0 ? null : result.ToString();
     }
 }

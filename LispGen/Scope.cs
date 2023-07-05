@@ -61,13 +61,14 @@ public record Scope(Scope? Parent, Dictionary<string, IExpression> Data)
         scope.Data["let"] = new FnExpr(
             scope,
             new NativeFnExprBody(
-                (executor, scope, args) =>
+                (executor, fnScope, args) =>
                 {
                     if (args.ToList() is not [ListExpr lets])
                     {
                         throw new Exception();
                     }
 
+                    var scope = fnScope.Parent!.CreateChildScope();
                     foreach (var expr in lets.Expressions)
                     {
                         if (expr is not ListExpr list)
@@ -80,7 +81,7 @@ public record Scope(Scope? Parent, Dictionary<string, IExpression> Data)
                             throw new Exception();
                         }
 
-                        scope.Parent!.Data.Add(atom.Name, executor.Execute(scope, value));
+                        scope.Data.Add(atom.Name, executor.Execute(scope, value));
                     }
 
                     return NullExpr.Instance;
@@ -99,10 +100,15 @@ public record Scope(Scope? Parent, Dictionary<string, IExpression> Data)
                     var sum = 0f;
                     foreach (var arg in args)
                     {
-                        var unwrapped = executor.Execute(scope, arg);
+                        var unwrapped = executor.Execute(scope, arg, ExpandAtoms: true);
                         if (unwrapped is not NumExpr num)
                         {
-                            throw new Exception();
+                            if (unwrapped is NullExpr)
+                            {
+                                continue;
+                            }
+
+                            throw new Exception(unwrapped.GetType().ToString());
                         }
 
                         sum += num.Value;
@@ -116,12 +122,13 @@ public record Scope(Scope? Parent, Dictionary<string, IExpression> Data)
         return scope;
     }
 
-    public bool TryGetValueRecursively(string name, out IExpression expr)
+    public bool TryGetValueRecursively(string name, out IExpression expr, bool ExpandAtoms = false)
     {
         var scope = this;
         while (scope != null)
         {
-            if (scope.Data.TryGetValue(name, out expr!))
+            // If we got the expression value from this scope and we don't need to continue expanding it, we're done!
+            if (scope.Data.TryGetValue(name, out expr!) && (!ExpandAtoms || expr is not AtomExpr))
             {
                 return true;
             }

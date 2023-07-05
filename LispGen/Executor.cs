@@ -2,13 +2,13 @@ namespace LispGen;
 
 public class Executor
 {
-    public IExpression Execute(Scope scope, IExpression expr)
+    public IExpression Execute(Scope scope, IExpression expr, bool ExpandAtoms = false)
     {
         var result = expr switch
         {
             QuotedExpr(var inner) => inner,
             ListExpr list => ExecuteListExpr(scope, list),
-            AtomExpr atom => scope.TryGetValueRecursively(atom.Name, out var val) ? val! : NullExpr.Instance,
+            AtomExpr atom => scope.TryGetValueRecursively(atom.Name, out var val, ExpandAtoms) ? val! : NullExpr.Instance,
             _ => expr
         };
 

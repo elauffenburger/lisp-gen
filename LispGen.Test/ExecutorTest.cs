@@ -30,13 +30,43 @@ public class ExecutorTest
     }
 
     [Fact]
-    public void Test_DefinedFN()
+    public void Test_DefinedFn()
     {
         var parsed = _parser.Parse("""
-            (do (defn add2 (x y) (add x y)) (let ((res (add2 40 (add 1 1))))) res)
+            (do (defn add2 (x y) (add x y)) 
+                (let ((res (add2 40 (add 1 1))))) 
+                res)
         """);
 
         var result = _executor.Execute(_rootScope, parsed);
         Assert.Equal(new NumExpr(42), result);
+    }
+
+
+    [Fact]
+    public void Test_DefinedFnScope()
+    {
+        var parsed = _parser.Parse("""
+            (do 
+                ; set x and y
+                (let ((x 42) 
+                      (y 13))) 
+                    
+                ; create a fn that uses an x and y param.
+                ; and tries to use z (which should be undefined).
+                (defn add2 (x y) 
+                    (add x (add y z))) 
+                
+                ; define z as a red herring that shouldn't be
+                ; available in add2's scope.
+                (let ((z 18))) 
+
+                ; invoke add2 with x and z and make sure they
+                ; bind correctly to the x and y params in add2.
+                (add2 x z))
+        """);
+
+        var result = _executor.Execute(_rootScope, parsed);
+        Assert.Equal(new NumExpr(60), result);
     }
 }

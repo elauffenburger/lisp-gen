@@ -30,6 +30,8 @@ public record ListExpr(IEnumerable<IExpression> Expressions) : IExpression
     }
 }
 
+public record CommentExpr(string Comment) : IExpression { }
+
 public interface IFnExprBody
 {
     IExpression Invoke(Executor executor, Scope scope, IEnumerable<IExpression> args);
