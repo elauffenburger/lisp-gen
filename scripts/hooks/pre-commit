@@ -5,9 +5,6 @@ set -o errexit -o pipefail
 dotnet restore && dotnet tool restore
 dotnet build && dotnet test
 
-JBOUT=$(mktemp)
-dotnet tool run jb inspectcode -o=$JBOUT lisp-gen.sln
-
 if dotnet format --verbosity normal | grep 'Formatted code file'; then
     echo 'files modified; exiting'
     exit 1
