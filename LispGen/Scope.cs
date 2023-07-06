@@ -4,24 +4,27 @@ public record Scope(Scope? Parent, Dictionary<string, IExpression> Data)
 {
     public static Scope Root()
     {
-        var scope = new Scope(null, new());
+        var rootScope = new Scope(null, new());
+        var rootCtx = new ExecutionContext(rootScope);
 
         /*
          * (do (println "hello world!") 42)       
          *
          */
-        scope.Data["do"] = new FnExpr(
-            scope,
+        rootScope.Data["do"] = new FnExpr(
+            rootCtx,
             new NativeFnExprBody(
-                (executor, scope, args) =>
+                (executor, ctx, args) =>
                 {
-                    IExpression? result = null;
+                    InvokeResult? result = null;
+                    ExecutionContext currCtx = ctx;
                     foreach (var expr in args)
                     {
-                        result = executor.Execute(scope, expr);
+                        result = executor.Execute(currCtx, expr);
+                        currCtx = result.NewContext;
                     }
 
-                    return result ?? NullExpr.Instance;
+                    return result ?? new(NullExpr.Instance, ctx);
                 }
             )
         );
@@ -31,10 +34,10 @@ public record Scope(Scope? Parent, Dictionary<string, IExpression> Data)
              (println (str "hello, " name)))       
          *
          */
-        scope.Data["defn"] = new FnExpr(
-            scope,
+        rootScope.Data["defn"] = new FnExpr(
+            rootCtx,
             new NativeFnExprBody(
-                (executor, scope, args) =>
+                (executor, ctx, args) =>
                 {
                     if (args.ToList() is not [AtomExpr fnName, ListExpr fnArgs, ListExpr fnBody])
                     {
@@ -46,10 +49,14 @@ public record Scope(Scope? Parent, Dictionary<string, IExpression> Data)
                         throw new Exception();
                     }
 
-                    var fn = new FnExpr(scope, new DefnFnExprBody(fnArgs.Expressions.Cast<AtomExpr>(), fnBody));
-                    scope.Parent!.Data.Add(fnName.Name, fn);
+                    // Create a new child scope that will contain the fn and update the context to use that going forward.
+                    var scope = ctx.Scope.CreateChildScope();
 
-                    return fn;
+                    // Define the fn.
+                    var fn = new FnExpr(ctx, new DefnFnExprBody(fnArgs.Expressions.Cast<AtomExpr>(), fnBody));
+                    scope.Data.Add(fnName.Name, fn);
+
+                    return new(fn, ctx.WithScope(scope));
                 }
             )
         );
@@ -58,17 +65,18 @@ public record Scope(Scope? Parent, Dictionary<string, IExpression> Data)
          * (let ((var1 1) 
          *       (var2 2)))
          */
-        scope.Data["let"] = new FnExpr(
-            scope,
+        rootScope.Data["let"] = new FnExpr(
+            rootCtx,
             new NativeFnExprBody(
-                (executor, fnScope, args) =>
+                (executor, ctx, args) =>
                 {
                     if (args.ToList() is not [ListExpr lets])
                     {
                         throw new Exception();
                     }
 
-                    var scope = fnScope.Parent!.CreateChildScope();
+                    // Create a new child scope that will contain the bindings.
+                    var scope = ctx.Scope.CreateChildScope();
                     foreach (var expr in lets.Expressions)
                     {
                         if (expr is not ListExpr list)
@@ -81,10 +89,11 @@ public record Scope(Scope? Parent, Dictionary<string, IExpression> Data)
                             throw new Exception();
                         }
 
-                        scope.Data.Add(atom.Name, executor.Execute(scope, value));
+                        scope.Data.Add(atom.Name, executor.Execute(ctx, value).Result);
                     }
 
-                    return NullExpr.Instance;
+                    // Update the context to use this new scope going forward.
+                    return new(NullExpr.Instance, ctx.WithScope(scope));
                 }
             )
         );
@@ -92,18 +101,18 @@ public record Scope(Scope? Parent, Dictionary<string, IExpression> Data)
         /*
          * (add x y)
          */
-        scope.Data["add"] = new FnExpr(
-            scope,
+        rootScope.Data["add"] = new FnExpr(
+            rootCtx,
             new NativeFnExprBody(
-                (executor, scope, args) =>
+                (executor, ctx, args) =>
                 {
                     var sum = 0f;
                     foreach (var arg in args)
                     {
-                        var unwrapped = executor.Execute(scope, arg, ExpandAtoms: true);
-                        if (unwrapped is not NumExpr num)
+                        var unwrapped = executor.Execute(ctx, arg, ExpandAtoms: true);
+                        if (unwrapped.Result is not NumExpr num)
                         {
-                            if (unwrapped is NullExpr)
+                            if (unwrapped.Result is NullExpr)
                             {
                                 continue;
                             }
@@ -114,12 +123,12 @@ public record Scope(Scope? Parent, Dictionary<string, IExpression> Data)
                         sum += num.Value;
                     }
 
-                    return new NumExpr(sum);
+                    return new(new NumExpr(sum), ctx);
                 }
             )
         );
 
-        return scope;
+        return rootScope;
     }
 
     public bool TryGetValueRecursively(string name, out IExpression expr, bool ExpandAtoms = false)

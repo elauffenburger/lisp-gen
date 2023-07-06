@@ -6,6 +6,12 @@ public class ExecutorTest
     private readonly Executor _executor = new();
 
     private readonly Scope _rootScope = Scope.Root();
+    private readonly ExecutionContext _rootContext;
+
+    public ExecutorTest()
+    {
+        _rootContext = new(_rootScope);
+    }
 
     [Fact]
     public void Test_BuiltInFn()
@@ -14,19 +20,22 @@ public class ExecutorTest
             (add 40 (add 1 1))
         """);
 
-        var result = _executor.Execute(_rootScope, parsed);
-        Assert.Equal(new NumExpr(42), result);
+        var result = _executor.Execute(_rootContext, parsed);
+        Assert.Equal(new NumExpr(42), result.Result);
     }
 
     [Fact]
     public void Test_Let()
     {
         var parsed = _parser.Parse("""
-            (do (let ((var1 1) (var2 2))) (let ((var3 3))) var3)
+            (do 
+                ;(let ((var1 1) (var2 2))) 
+                (let ((var3 3))) 
+                var3)
         """);
 
-        var result = _executor.Execute(_rootScope, parsed);
-        Assert.Equal(new NumExpr(3), result);
+        var result = _executor.Execute(_rootContext, parsed);
+        Assert.Equal(new NumExpr(3), result.Result);
     }
 
     [Fact]
@@ -38,8 +47,8 @@ public class ExecutorTest
                 res)
         """);
 
-        var result = _executor.Execute(_rootScope, parsed);
-        Assert.Equal(new NumExpr(42), result);
+        var result = _executor.Execute(_rootContext, parsed);
+        Assert.Equal(new NumExpr(42), result.Result);
     }
 
 
@@ -66,7 +75,7 @@ public class ExecutorTest
                 (add2 x z))
         """);
 
-        var result = _executor.Execute(_rootScope, parsed);
-        Assert.Equal(new NumExpr(60), result);
+        var result = _executor.Execute(_rootContext, parsed);
+        Assert.Equal(new NumExpr(60), result.Result);
     }
 }

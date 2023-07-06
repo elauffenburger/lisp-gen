@@ -30,37 +30,37 @@ public record ListExpr(IEnumerable<IExpression> Expressions) : IExpression
     }
 }
 
-public record CommentExpr(string Comment) : IExpression { }
+public record InvokeResult(IExpression Result, ExecutionContext NewContext) {}
 
 public interface IFnExprBody
 {
-    IExpression Invoke(Executor executor, Scope scope, IEnumerable<IExpression> args);
+    InvokeResult Invoke(Executor executor, ExecutionContext ctx, IEnumerable<IExpression> args);
 }
 
-public record NativeFnExprBody(Func<Executor, Scope, IEnumerable<IExpression>, IExpression> Body) : IFnExprBody
+public record NativeFnExprBody(Func<Executor, ExecutionContext, IEnumerable<IExpression>, InvokeResult> Body) : IFnExprBody
 {
-    public IExpression Invoke(Executor executor, Scope scope, IEnumerable<IExpression> args)
+    public InvokeResult Invoke(Executor executor, ExecutionContext ctx, IEnumerable<IExpression> args)
     {
-        return Body(executor, scope.CreateChildScope(), args);
+        return Body(executor, ctx, args);
     }
 }
 
 public record DefnFnExprBody(IEnumerable<AtomExpr> ArgNames, ListExpr Body) : IFnExprBody
 {
-    public IExpression Invoke(Executor executor, Scope scope, IEnumerable<IExpression> args)
+    public InvokeResult Invoke(Executor executor, ExecutionContext ctx, IEnumerable<IExpression> args)
     {
         // Create a new scope with the args bound to the appropriate names.
-        var fnScope = scope.CreateChildScope();
+        var fnScope = ctx.Scope.CreateChildScope();
         for (var i = 0; i < ArgNames.Count(); i++)
         {
-            fnScope.Data.Add(ArgNames.ElementAt(i).Name, args.ElementAt(i));
+            fnScope.Data.Add(ArgNames.ElementAt(i).Name, executor.Execute(ctx, args.ElementAt(i)).Result);
         }
 
-        return executor.Execute(fnScope, Body);
+        return executor.Execute(ctx.WithScope(fnScope), Body);
     }
 }
 
-public record FnExpr(Scope Scope, IFnExprBody Body) : IExpression { }
+public record FnExpr(ExecutionContext DeclContext, IFnExprBody Body) : IExpression { }
 
 public record NullExpr : IExpression
 {
