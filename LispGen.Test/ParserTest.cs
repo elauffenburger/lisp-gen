@@ -125,7 +125,7 @@ public class ParserTest
                 ; create a fn that uses an x and y param.
                 ; and tries to use z (which should be undefined).
                 (defn add2 (x y) 
-                    (add x (add y z))) 
+                    (+ x (+ y z))) 
                 
                 ; define z as a red herring that shouldn't be
                 ; available in add2's scope.
@@ -160,10 +160,10 @@ public class ParserTest
                         new AtomExpr("y"),
                     }),
                     new ListExpr(new IExpression[] {
-                        new AtomExpr("add"),
+                        new AtomExpr("+" ),
                         new AtomExpr("x"),
                         new ListExpr(new IExpression[] {
-                            new AtomExpr("add"),
+                            new AtomExpr("+" ),
                             new AtomExpr("y"),
                             new AtomExpr("z"),
                         }),

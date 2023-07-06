@@ -17,7 +17,7 @@ public class ExecutorTest
     public void Test_BuiltInFn()
     {
         var parsed = _parser.Parse("""
-            (add 40 (add 1 1))
+            (+ 40 (+ 1 1))
         """);
 
         var result = _executor.Execute(_rootContext, parsed);
@@ -42,8 +42,8 @@ public class ExecutorTest
     public void Test_DefinedFn()
     {
         var parsed = _parser.Parse("""
-            (do (defn add2 (x y) (add x y)) 
-                (let ((res (add2 40 (add 1 1))))) 
+            (do (defn add2 (x y) (+ x y)) 
+                (let ((res (add2 40 (+ 1 1))))) 
                 res)
         """);
 
@@ -64,7 +64,7 @@ public class ExecutorTest
                 ; create a fn that uses an x and y param.
                 ; and tries to use z (which should be undefined).
                 (defn add2 (x y) 
-                    (add x (add y z))) 
+                    (+ x (+ y z))) 
                 
                 ; define z as a red herring that shouldn't be
                 ; available in add2's scope.

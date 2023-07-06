@@ -141,37 +141,47 @@ public record Scope(Scope? Parent, Dictionary<string, IExpression> Data)
 
     private static void AddMath(Context rootCtx)
     {
-        /*
-         * (* x y)
-         */
-        rootCtx.Scope.Data["*"] = new FnExpr(
-            rootCtx,
-            new NativeFnExprBody(
-                (executor, ctx, args) =>
+        Func<Executor, Context, IList<IExpression>, InvokeResult> DoArithmetic(Func<float, float, float> op)
+        {
+            return (executor, ctx, args) =>
+            {
+                float? total = null;
+                foreach (var arg in args)
                 {
-                    float? total = null;
-                    foreach (var arg in args)
+                    var unwrapped = executor.Execute(ctx, arg);
+                    if (unwrapped.Result is not NumExpr)
                     {
-                        var unwrapped = executor.Execute(ctx, arg);
-                        if (unwrapped.Result is not NumExpr)
+                        if (unwrapped.Result is NullExpr)
                         {
-                            throw new Exception();
-                        }
-
-                        var val = ((NumExpr)unwrapped.Result).Value;
-                        if (total == null)
-                        {
-                            total = val;
                             continue;
                         }
 
-                        total *= val;
+                        throw new Exception();
                     }
 
-                    return new(new NumExpr(total!.Value), ctx);
+                    var val = ((NumExpr)unwrapped.Result).Value;
+                    if (total == null)
+                    {
+                        total = val;
+                        continue;
+                    }
+
+                    total = op(total!.Value, val);
                 }
-            )
-        );
+
+                return new(new NumExpr(total!.Value), ctx);
+            };
+        }
+
+        /*
+         * (+ x y)
+         */
+        rootCtx.Scope.Data["+"] = new FnExpr(rootCtx, new NativeFnExprBody(DoArithmetic((total, val) => total + val)));
+
+        /*
+         * (* x y)
+         */
+        rootCtx.Scope.Data["*"] = new FnExpr(rootCtx, new NativeFnExprBody(DoArithmetic((total, val) => total * val)));
 
         /*
          * (= x y)
@@ -204,36 +214,6 @@ public record Scope(Scope? Parent, Dictionary<string, IExpression> Data)
                     }
 
                     return new(AtomExpr.True, ctx);
-                }
-            )
-        );
-
-        /*
-         * (add x y)
-         */
-        rootCtx.Scope.Data["add"] = new FnExpr(
-            rootCtx,
-            new NativeFnExprBody(
-                (executor, ctx, args) =>
-                {
-                    var sum = 0f;
-                    foreach (var arg in args)
-                    {
-                        var unwrapped = executor.Execute(ctx, arg, expandAtoms: true);
-                        if (unwrapped.Result is not NumExpr num)
-                        {
-                            if (unwrapped.Result is NullExpr)
-                            {
-                                continue;
-                            }
-
-                            throw new Exception(unwrapped.GetType().ToString());
-                        }
-
-                        sum += num.Value;
-                    }
-
-                    return new(new NumExpr(sum), ctx);
                 }
             )
         );
