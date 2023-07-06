@@ -2,9 +2,16 @@ using System.Text;
 
 namespace LispGen.Lib;
 
-public interface IExpression { }
+public interface IExpression
+{
+    public static bool IsTruthy(IExpression expr) => !expr.Equals(AtomExpr.False);
+}
 
-public record AtomExpr(string Name) : IExpression { }
+public record AtomExpr(string Name) : IExpression
+{
+    public readonly static AtomExpr True = new("T");
+    public readonly static NullExpr False = NullExpr.Instance;
+}
 
 public record StringExpr(string Value) : IExpression { }
 
