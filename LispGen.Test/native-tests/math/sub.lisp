@@ -1,0 +1,1 @@
+(assert (= 1 (- 3 2)) t "3-2 should be 1")

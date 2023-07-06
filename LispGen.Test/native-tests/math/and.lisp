@@ -1,0 +1,5 @@
+(do (assert (and T T) t "true and true should be true")
+    (assert (and (= 42 42) T) t "true and true should be true")
+    (assert (not (and T NIL)) t "true and false should be false")
+    (assert (not (and T (= 1 2))) t "true and false should be false")
+    (assert (not (and NIL NIL)) t "false and false should be false"))
