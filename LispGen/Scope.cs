@@ -39,7 +39,7 @@ public record Scope(Scope? Parent, Dictionary<string, IExpression> Data)
             new NativeFnExprBody(
                 (executor, ctx, args) =>
                 {
-                    if (args.ToList() is not [AtomExpr fnName, ListExpr fnArgs, ListExpr fnBody])
+                    if (args is not [AtomExpr fnName, ListExpr fnArgs, ListExpr fnBody])
                     {
                         throw new Exception();
                     }
@@ -53,7 +53,7 @@ public record Scope(Scope? Parent, Dictionary<string, IExpression> Data)
                     var scope = ctx.Scope.CreateChildScope();
 
                     // Define the fn.
-                    var fn = new FnExpr(ctx, new DefnFnExprBody(fnArgs.Expressions.Cast<AtomExpr>(), fnBody));
+                    var fn = new FnExpr(ctx, new DefnFnExprBody(fnArgs.Expressions.Cast<AtomExpr>().ToList(), fnBody));
                     scope.Data.Add(fnName.Name, fn);
 
                     return new(fn, ctx.WithScope(scope));
@@ -70,7 +70,7 @@ public record Scope(Scope? Parent, Dictionary<string, IExpression> Data)
             new NativeFnExprBody(
                 (executor, ctx, args) =>
                 {
-                    if (args.ToList() is not [ListExpr lets])
+                    if (args is not [ListExpr lets])
                     {
                         throw new Exception();
                     }
@@ -84,7 +84,7 @@ public record Scope(Scope? Parent, Dictionary<string, IExpression> Data)
                             throw new Exception();
                         }
 
-                        if (list.Expressions.ToList() is not [AtomExpr atom, IExpression value])
+                        if (list.Expressions is not [AtomExpr atom, IExpression value])
                         {
                             throw new Exception();
                         }
@@ -109,7 +109,7 @@ public record Scope(Scope? Parent, Dictionary<string, IExpression> Data)
                     var sum = 0f;
                     foreach (var arg in args)
                     {
-                        var unwrapped = executor.Execute(ctx, arg, ExpandAtoms: true);
+                        var unwrapped = executor.Execute(ctx, arg, expandAtoms: true);
                         if (unwrapped.Result is not NumExpr num)
                         {
                             if (unwrapped.Result is NullExpr)

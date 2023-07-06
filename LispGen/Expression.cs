@@ -12,7 +12,7 @@ public record NumExpr(float Value) : IExpression { }
 
 public record QuotedExpr(IExpression Expression) : IExpression { }
 
-public record ListExpr(IEnumerable<IExpression> Expressions) : IExpression
+public record ListExpr(IList<IExpression> Expressions) : IExpression
 {
     public override string ToString()
     {
@@ -34,26 +34,26 @@ public record InvokeResult(IExpression Result, ExecutionContext NewContext) { }
 
 public interface IFnExprBody
 {
-    InvokeResult Invoke(Executor executor, ExecutionContext ctx, ExecutionContext fnDeclCtx, IEnumerable<IExpression> args);
+    InvokeResult Invoke(Executor executor, ExecutionContext ctx, ExecutionContext fnDeclCtx, IList<IExpression> args);
 }
 
-public record NativeFnExprBody(Func<Executor, ExecutionContext, IEnumerable<IExpression>, InvokeResult> Body) : IFnExprBody
+public record NativeFnExprBody(Func<Executor, ExecutionContext, IList<IExpression>, InvokeResult> Body) : IFnExprBody
 {
-    public InvokeResult Invoke(Executor executor, ExecutionContext ctx, ExecutionContext _, IEnumerable<IExpression> args)
+    public InvokeResult Invoke(Executor executor, ExecutionContext ctx, ExecutionContext _, IList<IExpression> args)
     {
         return Body(executor, ctx, args);
     }
 }
 
-public record DefnFnExprBody(IEnumerable<AtomExpr> ArgNames, ListExpr Body) : IFnExprBody
+public record DefnFnExprBody(IList<AtomExpr> ArgNames, ListExpr Body) : IFnExprBody
 {
-    public InvokeResult Invoke(Executor executor, ExecutionContext ctx, ExecutionContext fnDeclCtx, IEnumerable<IExpression> args)
+    public InvokeResult Invoke(Executor executor, ExecutionContext ctx, ExecutionContext fnDeclCtx, IList<IExpression> args)
     {
         // Create a new scope with the args bound to the appropriate names.
         var fnScope = fnDeclCtx.Scope.CreateChildScope();
-        for (var i = 0; i < ArgNames.Count(); i++)
+        for (var i = 0; i < ArgNames.Count; i++)
         {
-            fnScope.Data.Add(ArgNames.ElementAt(i).Name, executor.Execute(ctx, args.ElementAt(i)).Result);
+            fnScope.Data.Add(ArgNames[i].Name, executor.Execute(ctx, args[i]).Result);
         }
 
         return executor.Execute(fnDeclCtx.WithScope(fnScope), Body);

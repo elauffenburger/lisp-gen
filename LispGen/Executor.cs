@@ -7,13 +7,13 @@ public record ExecutionContext(Scope Scope)
 
 public class Executor
 {
-    public InvokeResult Execute(ExecutionContext ctx, IExpression expr, bool ExpandAtoms = false)
+    public InvokeResult Execute(ExecutionContext ctx, IExpression expr, bool expandAtoms = false)
     {
         var result = expr switch
         {
             QuotedExpr(var inner) => new(inner, ctx),
             ListExpr list => ExecuteListExpr(ctx, list),
-            AtomExpr atom => new InvokeResult(ctx.Scope.TryGetValueRecursively(atom.Name, out var val, ExpandAtoms) ? val! : NullExpr.Instance, ctx),
+            AtomExpr atom => new InvokeResult(ctx.Scope.TryGetValueRecursively(atom.Name, out var val, expandAtoms) ? val! : NullExpr.Instance, ctx),
             _ => new(expr, ctx)
         };
 
