@@ -13,10 +13,7 @@ public class Executor
         {
             QuotedExpr(var inner) => new(inner, ctx),
             ListExpr list => ExecuteListExpr(ctx, list),
-            AtomExpr atom => new InvokeResult(
-                ctx.Scope.TryGetValueRecursively(atom.Name, out var val, ExpandAtoms) ? val! : NullExpr.Instance,
-                ctx
-            ),
+            AtomExpr atom => new InvokeResult(ctx.Scope.TryGetValueRecursively(atom.Name, out var val, ExpandAtoms) ? val! : NullExpr.Instance, ctx),
             _ => new(expr, ctx)
         };
 
@@ -55,6 +52,6 @@ public class Executor
             throw new Exception();
         }
 
-        return fn.Body.Invoke(this, ctx, rest);
+        return fn.Body.Invoke(this, ctx, fn.DeclContext, rest);
     }
 }

@@ -30,16 +30,16 @@ public record ListExpr(IEnumerable<IExpression> Expressions) : IExpression
     }
 }
 
-public record InvokeResult(IExpression Result, ExecutionContext NewContext) {}
+public record InvokeResult(IExpression Result, ExecutionContext NewContext) { }
 
 public interface IFnExprBody
 {
-    InvokeResult Invoke(Executor executor, ExecutionContext ctx, IEnumerable<IExpression> args);
+    InvokeResult Invoke(Executor executor, ExecutionContext ctx, ExecutionContext fnDeclCtx, IEnumerable<IExpression> args);
 }
 
 public record NativeFnExprBody(Func<Executor, ExecutionContext, IEnumerable<IExpression>, InvokeResult> Body) : IFnExprBody
 {
-    public InvokeResult Invoke(Executor executor, ExecutionContext ctx, IEnumerable<IExpression> args)
+    public InvokeResult Invoke(Executor executor, ExecutionContext ctx, ExecutionContext _, IEnumerable<IExpression> args)
     {
         return Body(executor, ctx, args);
     }
@@ -47,16 +47,16 @@ public record NativeFnExprBody(Func<Executor, ExecutionContext, IEnumerable<IExp
 
 public record DefnFnExprBody(IEnumerable<AtomExpr> ArgNames, ListExpr Body) : IFnExprBody
 {
-    public InvokeResult Invoke(Executor executor, ExecutionContext ctx, IEnumerable<IExpression> args)
+    public InvokeResult Invoke(Executor executor, ExecutionContext ctx, ExecutionContext fnDeclCtx, IEnumerable<IExpression> args)
     {
         // Create a new scope with the args bound to the appropriate names.
-        var fnScope = ctx.Scope.CreateChildScope();
+        var fnScope = fnDeclCtx.Scope.CreateChildScope();
         for (var i = 0; i < ArgNames.Count(); i++)
         {
             fnScope.Data.Add(ArgNames.ElementAt(i).Name, executor.Execute(ctx, args.ElementAt(i)).Result);
         }
 
-        return executor.Execute(ctx.WithScope(fnScope), Body);
+        return executor.Execute(fnDeclCtx.WithScope(fnScope), Body);
     }
 }
 

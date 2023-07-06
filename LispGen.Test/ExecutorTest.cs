@@ -29,7 +29,7 @@ public class ExecutorTest
     {
         var parsed = _parser.Parse("""
             (do 
-                ;(let ((var1 1) (var2 2))) 
+                (let ((var1 1) (var2 2))) 
                 (let ((var3 3))) 
                 var3)
         """);
