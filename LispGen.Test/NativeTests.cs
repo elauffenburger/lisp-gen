@@ -43,6 +43,10 @@ public class NativeTests
             }
         }
 
+        // Make sure we ran the number of tests we expected to.
+        Assert.Equal(runTests.Count, AllowlistedTests.Count);
+
+        // If there were any failed tests (oh no!)
         if (failedTests.Any())
         {
             var formattedErrors = failedTests.Aggregate(new StringBuilder(), (acc, kvp) =>
