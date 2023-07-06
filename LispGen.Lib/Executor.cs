@@ -1,3 +1,5 @@
+using System.Text;
+
 namespace LispGen.Lib;
 
 public record Context(Scope Scope)
@@ -53,5 +55,41 @@ public class Executor
         }
 
         return fn.Body.Invoke(this, ctx, fn.DeclContext, rest);
+    }
+
+    public StringExpr Interpolate(Context ctx, ReadOnlySpan<char> str, IList<IExpression> args)
+    {
+        var numResolvedDirectives = 0;
+        var result = new StringBuilder(str.Length);
+        for (var i = 0; i < str.Length; i++)
+        {
+            if (str[i] != '%' || numResolvedDirectives == args.Count)
+            {
+                result.Append(str[i]);
+                continue;
+            }
+
+            i++;
+
+            var argResult = Execute(ctx, args[numResolvedDirectives]);
+            switch (str[i])
+            {
+                case 'd':
+                    if (argResult.Result is not NumExpr num)
+                    {
+                        throw new Exception($"arg {numResolvedDirectives} ({argResult.Result}) cannot be formatted as a number");
+                    }
+
+                    result.Append(num.Value);
+                    break;
+
+                default:
+                    throw new Exception($"unknown formatting directive {str[i]}");
+            }
+
+            numResolvedDirectives++;
+        }
+
+        return new StringExpr(result.ToString());
     }
 }
