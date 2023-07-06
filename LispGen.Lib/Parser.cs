@@ -70,17 +70,25 @@ public class Parser
             '\'' => new QuotedExpr(ParseExpression()!),
             '"' => ParseStringExpr(),
             ';' => ChompCommentAndReparse(),
-            var c =>
-                char.IsAsciiDigit(c)
-                    ? ParseNumberExpr()
-                    : char.IsAsciiLetter(ch.Value)
-                        ? ParseAtom()
-                        : throw new Exception(),
+            _ => ParseAtomOrNumber(),
         };
 
         ChompWhitespace();
 
         return result;
+    }
+
+    private IExpression ParseAtomOrNumber()
+    {
+        var word = ChompUntil(new char[] { ' ', '(', ')', '"', '#', '\n', ';' });
+        if (word == null || word.Length == 0)
+        {
+            throw new Exception();
+        }
+
+        return word.All(ch => char.IsAsciiDigit(ch) || ch == '.')
+            ? ParseAsNumberExpr(word.AsSpan())
+            : new AtomExpr(word);
     }
 
     private StringExpr ParseStringExpr()
@@ -126,30 +134,13 @@ public class Parser
         return new StringExpr(str.ToString());
     }
 
-    private AtomExpr ParseAtom()
-    {
-        var atomStr = new StringBuilder();
-        for (var ch = PeekNext(); ch != null; ch = PeekNext())
-        {
-            if (!IsAtomCh(ch.Value))
-            {
-                break;
-            }
-
-            atomStr.Append(Next());
-        }
-
-        return new AtomExpr(atomStr.ToString());
-    }
-
-    private NumExpr ParseNumberExpr()
+    private static NumExpr ParseAsNumberExpr(ReadOnlySpan<char> word)
     {
         var numStr = new StringBuilder();
-        for (var ch = PeekNext(); ch != null; ch = PeekNext())
+        foreach (var ch in word)
         {
-            if (char.IsAsciiDigit(ch.Value) || ch == '.')
+            if (char.IsAsciiDigit(ch) || ch == '.')
             {
-                Next();
                 numStr.Append(ch);
                 continue;
             }
@@ -178,7 +169,7 @@ public class Parser
             throw new Exception();
         }
 
-        ChompUntil('\n');
+        ChompUntil(new char[] { '\n' });
     }
 
     private static bool IsAtomCh(char ch) => char.IsAsciiLetter(ch) || char.IsAsciiDigit(ch);
@@ -206,11 +197,14 @@ public class Parser
         return _input[_index];
     }
 
-    private string? ChompUntil(char needle)
+    private string? ChompUntil(char[] needles)
     {
+        var needleSet = new HashSet<char>(needles);
+
         var result = new StringBuilder();
-        for (var ch = PeekNext(); ch != needle; ch = Next())
+        for (var ch = PeekNext(); ch != null && !needleSet.Contains(ch.Value); ch = PeekNext())
         {
+            Next();
             result.Append(ch);
         }
 
