@@ -39,17 +39,17 @@ public class Executor
     {
         if (head is not AtomExpr atom)
         {
-            throw new Exception();
+            throw new Exception($"head of invocation expression is not an atom ({head})");
         }
 
         if (!ctx.Scope.TryGetValueRecursively(atom.Name, out var atomExpr))
         {
-            throw new Exception();
+            throw new Exception($"lookup for '{atom.Name}' failed");
         }
 
         if (atomExpr is not FnExpr fn)
         {
-            throw new Exception();
+            throw new Exception($"{atom.Name} is not a function");
         }
 
         return fn.Body.Invoke(this, ctx, fn.DeclContext, rest);
