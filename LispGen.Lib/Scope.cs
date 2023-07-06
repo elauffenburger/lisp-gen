@@ -7,11 +7,18 @@ public record Scope(Scope? Parent, Dictionary<string, IExpression> Data)
         var rootScope = new Scope(null, new());
         var rootCtx = new Context(rootScope);
 
+        AddCore(rootCtx);
+        AddMath(rootCtx);
+
+        return rootScope;
+    }
+
+    private static void AddCore(Context rootCtx)
+    {
         /*
-         * (do (println "hello world!") 42)       
-         *
+         * (do (println "hello world!") 42)
          */
-        rootScope.Data["do"] = new FnExpr(
+        rootCtx.Scope.Data["do"] = new FnExpr(
             rootCtx,
             new NativeFnExprBody(
                 (executor, ctx, args) =>
@@ -31,10 +38,9 @@ public record Scope(Scope? Parent, Dictionary<string, IExpression> Data)
 
         /*
          * (defn hello (name)
-             (println (str "hello, " name)))       
-         *
+         *   (println (str "hello, " name)))       
          */
-        rootScope.Data["defn"] = new FnExpr(
+        rootCtx.Scope.Data["defn"] = new FnExpr(
             rootCtx,
             new NativeFnExprBody(
                 (executor, ctx, args) =>
@@ -65,7 +71,7 @@ public record Scope(Scope? Parent, Dictionary<string, IExpression> Data)
          * (let ((var1 1) 
          *       (var2 2)))
          */
-        rootScope.Data["let"] = new FnExpr(
+        rootCtx.Scope.Data["let"] = new FnExpr(
             rootCtx,
             new NativeFnExprBody(
                 (executor, ctx, args) =>
@@ -97,11 +103,15 @@ public record Scope(Scope? Parent, Dictionary<string, IExpression> Data)
                 }
             )
         );
+    }
+
+    private static void AddMath(Context rootCtx)
+    {
 
         /*
          * (add x y)
          */
-        rootScope.Data["add"] = new FnExpr(
+        rootCtx.Scope.Data["add"] = new FnExpr(
             rootCtx,
             new NativeFnExprBody(
                 (executor, ctx, args) =>
@@ -127,8 +137,6 @@ public record Scope(Scope? Parent, Dictionary<string, IExpression> Data)
                 }
             )
         );
-
-        return rootScope;
     }
 
     public bool TryGetValueRecursively(string name, out IExpression expr, bool ExpandAtoms = false)
