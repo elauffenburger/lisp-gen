@@ -7,14 +7,48 @@ public record Scope(Scope? Parent, Dictionary<string, IExpression> Data)
         var rootScope = new Scope(null, new());
         var rootCtx = new Context(rootScope);
 
+        AddPrimitives(rootCtx);
         AddCore(rootCtx);
         AddMath(rootCtx);
 
         return rootScope;
     }
 
+    private static void AddPrimitives(Context rootCtx)
+    {
+        rootCtx.Scope.Data["T"] = AtomExpr.True;
+        rootCtx.Scope.Data["NIL"] = NullExpr.Instance;
+    }
+
     private static void AddCore(Context rootCtx)
     {
+        /*
+         * (assert (= 1 1) t "1 should equal 1")
+         */
+        rootCtx.Scope.Data["assert"] = new FnExpr(
+            rootCtx,
+            new NativeFnExprBody((executor, ctx, args) =>
+            {
+                var testResult = executor.Execute(ctx, args[0]);
+                if (!IExpression.IsTruthy(testResult.Result))
+                {
+                    if (args.Count < 2 || !args[1].Equals(new AtomExpr("t")) || args[2] is not StringExpr msg)
+                    {
+                        throw new Exception();
+                    }
+
+                    if (args.Count > 3)
+                    {
+                        msg = executor.Interpolate(ctx, msg.Value, args.Skip(3).ToList());
+                    }
+
+                    throw new Exception(msg.Value);
+                }
+
+                return new(AtomExpr.True, ctx);
+            })
+        );
+
         /*
          * (do (println "hello world!") 42)
          */
@@ -107,6 +141,72 @@ public record Scope(Scope? Parent, Dictionary<string, IExpression> Data)
 
     private static void AddMath(Context rootCtx)
     {
+        /*
+         * (* x y)
+         */
+        rootCtx.Scope.Data["*"] = new FnExpr(
+            rootCtx,
+            new NativeFnExprBody(
+                (executor, ctx, args) =>
+                {
+                    float? total = null;
+                    foreach (var arg in args)
+                    {
+                        var unwrapped = executor.Execute(ctx, arg);
+                        if (unwrapped.Result is not NumExpr)
+                        {
+                            throw new Exception();
+                        }
+
+                        var val = ((NumExpr)unwrapped.Result).Value;
+                        if (total == null)
+                        {
+                            total = val;
+                            continue;
+                        }
+
+                        total *= val;
+                    }
+
+                    return new(new NumExpr(total!.Value), ctx);
+                }
+            )
+        );
+
+        /*
+         * (= x y)
+         */
+        rootCtx.Scope.Data["="] = new FnExpr(
+            rootCtx,
+            new NativeFnExprBody(
+                (executor, ctx, args) =>
+                {
+                    float? expected = null;
+                    foreach (var arg in args)
+                    {
+                        var unwrapped = executor.Execute(ctx, arg);
+                        if (unwrapped.Result is not NumExpr)
+                        {
+                            throw new Exception();
+                        }
+
+                        var val = ((NumExpr)unwrapped.Result).Value;
+                        if (expected == null)
+                        {
+                            expected = val;
+                            continue;
+                        }
+
+                        if (val != expected)
+                        {
+                            return new(AtomExpr.False, ctx);
+                        }
+                    }
+
+                    return new(AtomExpr.True, ctx);
+                }
+            )
+        );
 
         /*
          * (add x y)
