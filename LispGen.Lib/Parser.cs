@@ -114,13 +114,13 @@ public class Parser
                     break;
 
                 case '"':
+                    Next();
                     return new StringExpr(str.ToString());
 
                 default:
                     str.Append(Next());
                     break;
             }
-
         }
 
         return new StringExpr(str.ToString());
