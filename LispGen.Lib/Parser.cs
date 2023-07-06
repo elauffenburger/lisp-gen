@@ -1,6 +1,6 @@
 using System.Text;
 
-namespace LispGen;
+namespace LispGen.Lib;
 
 public class Parser
 {

@@ -1,7 +1,4 @@
 namespace LispGen.Test;
-
-using LispGen;
-
 public class ParserTest
 {
     private readonly Parser _parser;

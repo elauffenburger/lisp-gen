@@ -1,13 +1,13 @@
-namespace LispGen;
+namespace LispGen.Lib;
 
-public record ExecutionContext(Scope Scope)
+public record Context(Scope Scope)
 {
-    public ExecutionContext WithScope(Scope scope) => this with { Scope = scope };
+    public Context WithScope(Scope scope) => this with { Scope = scope };
 }
 
 public class Executor
 {
-    public InvokeResult Execute(ExecutionContext ctx, IExpression expr, bool expandAtoms = false)
+    public InvokeResult Execute(Context ctx, IExpression expr, bool expandAtoms = false)
     {
         var result = expr switch
         {
@@ -24,7 +24,7 @@ public class Executor
         };
     }
 
-    private InvokeResult ExecuteListExpr(ExecutionContext ctx, ListExpr expr)
+    private InvokeResult ExecuteListExpr(Context ctx, ListExpr expr)
     {
         var exprs = expr.Expressions;
         if (!exprs.Any())
@@ -35,7 +35,7 @@ public class Executor
         return Invoke(ctx, exprs.First(), exprs.Skip(1).ToList());
     }
 
-    private InvokeResult Invoke(ExecutionContext ctx, IExpression head, IList<IExpression> rest)
+    private InvokeResult Invoke(Context ctx, IExpression head, IList<IExpression> rest)
     {
         if (head is not AtomExpr atom)
         {

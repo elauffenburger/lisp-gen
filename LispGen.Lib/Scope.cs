@@ -1,11 +1,11 @@
-namespace LispGen;
+namespace LispGen.Lib;
 
 public record Scope(Scope? Parent, Dictionary<string, IExpression> Data)
 {
     public static Scope Root()
     {
         var rootScope = new Scope(null, new());
-        var rootCtx = new ExecutionContext(rootScope);
+        var rootCtx = new Context(rootScope);
 
         /*
          * (do (println "hello world!") 42)       
@@ -17,7 +17,7 @@ public record Scope(Scope? Parent, Dictionary<string, IExpression> Data)
                 (executor, ctx, args) =>
                 {
                     InvokeResult? result = null;
-                    ExecutionContext currCtx = ctx;
+                    Context currCtx = ctx;
                     foreach (var expr in args)
                     {
                         result = executor.Execute(currCtx, expr);

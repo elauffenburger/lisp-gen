@@ -6,7 +6,7 @@ public class ExecutorTest
     private readonly Executor _executor = new();
 
     private readonly Scope _rootScope = Scope.Root();
-    private readonly ExecutionContext _rootContext;
+    private readonly Context _rootContext;
 
     public ExecutorTest()
     {

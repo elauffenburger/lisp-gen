@@ -4,6 +4,8 @@ using CliFx;
 using CliFx.Attributes;
 using CliFx.Infrastructure;
 
+using LispGen.Lib;
+
 namespace LispGen;
 
 [Command("repl")]

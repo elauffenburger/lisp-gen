@@ -1,5 +1,7 @@
 ﻿using CliFx;
 
+using LispGen.Lib;
+
 using Microsoft.Extensions.DependencyInjection;
 
 namespace LispGen;

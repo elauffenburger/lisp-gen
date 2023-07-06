@@ -1,6 +1,6 @@
 using System.Text;
 
-namespace LispGen;
+namespace LispGen.Lib;
 
 public interface IExpression { }
 
@@ -30,16 +30,16 @@ public record ListExpr(IList<IExpression> Expressions) : IExpression
     }
 }
 
-public record InvokeResult(IExpression Result, ExecutionContext NewContext) { }
+public record InvokeResult(IExpression Result, Context NewContext) { }
 
 public interface IFnExprBody
 {
-    InvokeResult Invoke(Executor executor, ExecutionContext ctx, ExecutionContext fnDeclCtx, IList<IExpression> args);
+    InvokeResult Invoke(Executor executor, Context ctx, Context fnDeclCtx, IList<IExpression> args);
 }
 
-public record NativeFnExprBody(Func<Executor, ExecutionContext, IList<IExpression>, InvokeResult> Body) : IFnExprBody
+public record NativeFnExprBody(Func<Executor, Context, IList<IExpression>, InvokeResult> Body) : IFnExprBody
 {
-    public InvokeResult Invoke(Executor executor, ExecutionContext ctx, ExecutionContext _, IList<IExpression> args)
+    public InvokeResult Invoke(Executor executor, Context ctx, Context _, IList<IExpression> args)
     {
         return Body(executor, ctx, args);
     }
@@ -47,7 +47,7 @@ public record NativeFnExprBody(Func<Executor, ExecutionContext, IList<IExpressio
 
 public record DefnFnExprBody(IList<AtomExpr> ArgNames, ListExpr Body) : IFnExprBody
 {
-    public InvokeResult Invoke(Executor executor, ExecutionContext ctx, ExecutionContext fnDeclCtx, IList<IExpression> args)
+    public InvokeResult Invoke(Executor executor, Context ctx, Context fnDeclCtx, IList<IExpression> args)
     {
         // Create a new scope with the args bound to the appropriate names.
         var fnScope = fnDeclCtx.Scope.CreateChildScope();
@@ -60,7 +60,7 @@ public record DefnFnExprBody(IList<AtomExpr> ArgNames, ListExpr Body) : IFnExprB
     }
 }
 
-public record FnExpr(ExecutionContext DeclContext, IFnExprBody Body) : IExpression { }
+public record FnExpr(Context DeclContext, IFnExprBody Body) : IExpression { }
 
 public record NullExpr : IExpression
 {
