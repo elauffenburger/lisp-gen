@@ -17,7 +17,7 @@ public record ListExpr(IList<IExpression> Expressions) : IExpression
     public override string ToString()
     {
         var str = new StringBuilder();
-        str.Append("{ ");
+        str.Append("ListExpr { ");
 
         foreach (var expr in Expressions)
         {
