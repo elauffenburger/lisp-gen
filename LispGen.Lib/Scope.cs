@@ -179,6 +179,11 @@ public record Scope(Scope? Parent, Dictionary<string, IExpression> Data)
         rootCtx.Scope.Data["+"] = new FnExpr(rootCtx, new NativeFnExprBody(DoArithmetic((total, val) => total + val)));
 
         /*
+         * (- x y)
+         */
+        rootCtx.Scope.Data["-"] = new FnExpr(rootCtx, new NativeFnExprBody(DoArithmetic((total, val) => total - val)));
+
+        /*
          * (* x y)
          */
         rootCtx.Scope.Data["*"] = new FnExpr(rootCtx, new NativeFnExprBody(DoArithmetic((total, val) => total * val)));
