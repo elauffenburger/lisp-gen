@@ -187,6 +187,11 @@ public record Scope(Scope? Parent, Dictionary<string, IExpression> Data)
          */
         rootScope.Data["*"] = new FnExpr(rootScope, new NativeFnExprBody(DoArithmetic((total, val) => total * val)));
 
+        /*
+         * (/ x y)
+         */
+        rootScope.Data["/"] = new FnExpr(rootScope, new NativeFnExprBody(DoArithmetic((total, val) => total / val)));
+
         Func<Executor, Context, IList<IExpression>, InvokeResult> DoComparison(Func<float, float, bool> op)
         {
             return (executor, ctx, args) =>
