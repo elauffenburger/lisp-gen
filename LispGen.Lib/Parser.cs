@@ -172,8 +172,6 @@ public class Parser
         ChompUntil(new char[] { '\n' });
     }
 
-    private static bool IsAtomCh(char ch) => char.IsAsciiLetter(ch) || char.IsAsciiDigit(ch);
-
     private char? Next()
     {
         if (_index == _input!.Length)

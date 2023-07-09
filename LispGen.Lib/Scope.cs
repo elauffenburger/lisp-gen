@@ -20,13 +20,13 @@ public record Scope(Scope? Parent, Dictionary<string, IExpression> Data)
         rootScope.Data["NIL"] = NullExpr.Instance;
     }
 
-    public bool TryGetValueRecursively(string name, out IExpression expr, bool ExpandAtoms = false)
+    public bool TryGetValueRecursively(string name, out IExpression expr, bool expandAtoms = false)
     {
         var scope = this;
         while (scope != null)
         {
             // If we got the expression value from this scope and we don't need to continue expanding it, we're done!
-            if (scope.Data.TryGetValue(name, out expr!) && (!ExpandAtoms || expr is not AtomExpr))
+            if (scope.Data.TryGetValue(name, out expr!) && (!expandAtoms || expr is not AtomExpr))
             {
                 return true;
             }
