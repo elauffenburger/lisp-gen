@@ -8,6 +8,8 @@ public class NativeTests
 {
     private static readonly HashSet<string> AllowlistedTests = new()
     {
+        "math.lt.lisp",
+        "math.lte.lisp",
         "math.plus.lisp",
         "math.sub.lisp",
         "math.times.lisp"
