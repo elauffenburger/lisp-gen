@@ -7,8 +7,8 @@ public record Scope(Scope? Parent, Dictionary<string, IExpression> Data)
         var rootScope = new Scope(null, new());
 
         AddPrimitives(rootScope);
-        AddCore(rootScope);
-        AddMath(rootScope);
+        AddCoreOps(rootScope);
+        AddMathOps(rootScope);
 
         return rootScope;
     }
@@ -20,7 +20,7 @@ public record Scope(Scope? Parent, Dictionary<string, IExpression> Data)
         rootScope.Data["NIL"] = NullExpr.Instance;
     }
 
-    private static void AddCore(Scope rootScope)
+    private static void AddCoreOps(Scope rootScope)
     {
         /*
          * (assert (= 1 1) t "1 should equal 1")
@@ -153,7 +153,7 @@ public record Scope(Scope? Parent, Dictionary<string, IExpression> Data)
         );
     }
 
-    private static void AddMath(Scope rootScope)
+    private static void AddMathOps(Scope rootScope)
     {
         Func<Executor, Context, IList<IExpression>, InvokeResult> DoArithmetic(Func<float, float, float> op)
         {
