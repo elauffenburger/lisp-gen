@@ -297,6 +297,10 @@ public record Scope(Scope? Parent, Dictionary<string, IExpression> Data)
          */
         rootScope.Data["1+"] = new FnExpr(rootScope, new NativeFnExprBody(DoIncDec(val => val + 1)));
 
+        /*
+         * (1- x)
+         */
+        rootScope.Data["1-"] = new FnExpr(rootScope, new NativeFnExprBody(DoIncDec(val => val - 1)));
     }
 
     public bool TryGetValueRecursively(string name, out IExpression expr, bool ExpandAtoms = false)
