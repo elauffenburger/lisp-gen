@@ -5,28 +5,27 @@ public record Scope(Scope? Parent, Dictionary<string, IExpression> Data)
     public static Scope Root()
     {
         var rootScope = new Scope(null, new());
-        var rootCtx = new Context(rootScope);
 
-        AddPrimitives(rootCtx);
-        AddCore(rootCtx);
-        AddMath(rootCtx);
+        AddPrimitives(rootScope);
+        AddCore(rootScope);
+        AddMath(rootScope);
 
         return rootScope;
     }
 
-    private static void AddPrimitives(Context rootCtx)
+    private static void AddPrimitives(Scope rootScope)
     {
-        rootCtx.Scope.Data["T"] = AtomExpr.True;
-        rootCtx.Scope.Data["NIL"] = NullExpr.Instance;
+        rootScope.Data["T"] = AtomExpr.True;
+        rootScope.Data["NIL"] = NullExpr.Instance;
     }
 
-    private static void AddCore(Context rootCtx)
+    private static void AddCore(Scope rootScope)
     {
         /*
          * (assert (= 1 1) t "1 should equal 1")
          */
-        rootCtx.Scope.Data["assert"] = new FnExpr(
-            rootCtx,
+        rootScope.Data["assert"] = new FnExpr(
+            rootScope,
             new NativeFnExprBody((executor, ctx, args) =>
             {
                 var testResult = executor.Execute(ctx, args[0]);
@@ -52,8 +51,8 @@ public record Scope(Scope? Parent, Dictionary<string, IExpression> Data)
         /*
          * (do (println "hello world!") 42)
          */
-        rootCtx.Scope.Data["do"] = new FnExpr(
-            rootCtx,
+        rootScope.Data["do"] = new FnExpr(
+            rootScope,
             new NativeFnExprBody(
                 (executor, ctx, args) =>
                 {
@@ -74,8 +73,8 @@ public record Scope(Scope? Parent, Dictionary<string, IExpression> Data)
          * (defn hello (name)
          *   (println (str "hello, " name)))       
          */
-        rootCtx.Scope.Data["defn"] = new FnExpr(
-            rootCtx,
+        rootScope.Data["defn"] = new FnExpr(
+            rootScope,
             new NativeFnExprBody(
                 (executor, ctx, args) =>
                 {
@@ -93,7 +92,7 @@ public record Scope(Scope? Parent, Dictionary<string, IExpression> Data)
                     var scope = ctx.Scope.CreateChildScope();
 
                     // Define the fn.
-                    var fn = new FnExpr(ctx, new DefnFnExprBody(fnArgs.Expressions.Cast<AtomExpr>().ToList(), fnBody));
+                    var fn = new FnExpr(ctx.Scope, new DefnFnExprBody(fnArgs.Expressions.Cast<AtomExpr>().ToList(), fnBody));
                     scope.Data.Add(fnName.Name, fn);
 
                     return new(fn, ctx.WithScope(scope));
@@ -105,8 +104,8 @@ public record Scope(Scope? Parent, Dictionary<string, IExpression> Data)
          * (let ((var1 1) 
          *       (var2 2)))
          */
-        rootCtx.Scope.Data["let"] = new FnExpr(
-            rootCtx,
+        rootScope.Data["let"] = new FnExpr(
+            rootScope,
             new NativeFnExprBody(
                 (executor, ctx, args) =>
                 {
@@ -139,7 +138,7 @@ public record Scope(Scope? Parent, Dictionary<string, IExpression> Data)
         );
     }
 
-    private static void AddMath(Context rootCtx)
+    private static void AddMath(Scope rootScope)
     {
         Func<Executor, Context, IList<IExpression>, InvokeResult> DoArithmetic(Func<float, float, float> op)
         {
@@ -176,23 +175,23 @@ public record Scope(Scope? Parent, Dictionary<string, IExpression> Data)
         /*
          * (+ x y)
          */
-        rootCtx.Scope.Data["+"] = new FnExpr(rootCtx, new NativeFnExprBody(DoArithmetic((total, val) => total + val)));
+        rootScope.Data["+"] = new FnExpr(rootScope, new NativeFnExprBody(DoArithmetic((total, val) => total + val)));
 
         /*
          * (- x y)
          */
-        rootCtx.Scope.Data["-"] = new FnExpr(rootCtx, new NativeFnExprBody(DoArithmetic((total, val) => total - val)));
+        rootScope.Data["-"] = new FnExpr(rootScope, new NativeFnExprBody(DoArithmetic((total, val) => total - val)));
 
         /*
          * (* x y)
          */
-        rootCtx.Scope.Data["*"] = new FnExpr(rootCtx, new NativeFnExprBody(DoArithmetic((total, val) => total * val)));
+        rootScope.Data["*"] = new FnExpr(rootScope, new NativeFnExprBody(DoArithmetic((total, val) => total * val)));
 
         /*
          * (= x y)
          */
-        rootCtx.Scope.Data["="] = new FnExpr(
-            rootCtx,
+        rootScope.Data["="] = new FnExpr(
+            rootScope,
             new NativeFnExprBody(
                 (executor, ctx, args) =>
                 {

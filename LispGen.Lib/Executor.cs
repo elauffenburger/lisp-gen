@@ -54,7 +54,7 @@ public class Executor
             throw new Exception($"{atom.Name} is not a function");
         }
 
-        return fn.Body.Invoke(this, ctx, fn.DeclContext, rest);
+        return fn.Body.Invoke(this, ctx, fn.DeclScope, rest);
     }
 
     public StringExpr Interpolate(Context ctx, ReadOnlySpan<char> str, IList<IExpression> args)
