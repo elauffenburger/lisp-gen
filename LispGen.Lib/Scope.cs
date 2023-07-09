@@ -20,6 +20,26 @@ public record Scope(Scope? Parent, Dictionary<string, IExpression> Data)
         rootScope.Data["NIL"] = NullExpr.Instance;
     }
 
+    public bool TryGetValueRecursively(string name, out IExpression expr, bool ExpandAtoms = false)
+    {
+        var scope = this;
+        while (scope != null)
+        {
+            // If we got the expression value from this scope and we don't need to continue expanding it, we're done!
+            if (scope.Data.TryGetValue(name, out expr!) && (!ExpandAtoms || expr is not AtomExpr))
+            {
+                return true;
+            }
+
+            scope = scope.Parent;
+        }
+
+        expr = NullExpr.Instance;
+        return false;
+    }
+
+    public Scope CreateChildScope() => new(this, new());
+
     private static void AddCoreOps(Scope rootScope)
     {
         /*
@@ -358,24 +378,4 @@ public record Scope(Scope? Parent, Dictionary<string, IExpression> Data)
             )
         );
     }
-
-    public bool TryGetValueRecursively(string name, out IExpression expr, bool ExpandAtoms = false)
-    {
-        var scope = this;
-        while (scope != null)
-        {
-            // If we got the expression value from this scope and we don't need to continue expanding it, we're done!
-            if (scope.Data.TryGetValue(name, out expr!) && (!ExpandAtoms || expr is not AtomExpr))
-            {
-                return true;
-            }
-
-            scope = scope.Parent;
-        }
-
-        expr = NullExpr.Instance;
-        return false;
-    }
-
-    public Scope CreateChildScope() => new(this, new());
 }
