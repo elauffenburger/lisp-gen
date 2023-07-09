@@ -247,32 +247,6 @@ public record Scope(Scope? Parent, Dictionary<string, IExpression> Data)
          */
         rootScope.Data[">="] = new FnExpr(rootScope, new NativeFnExprBody(DoComparison((a, b) => a >= b)));
 
-        /*
-         * (not T)
-         */
-        rootScope.Data["not"] = new FnExpr(
-            rootScope,
-            new NativeFnExprBody(
-                (executor, ctx, args) =>
-                {
-                    if (args.Count != 1)
-                    {
-                        throw new Exception();
-                    }
-
-                    var unwrapped = executor.Execute(ctx, args[0], false);
-                    IExpression result = unwrapped.Result switch
-                    {
-                        AtomExpr atomExpr => atomExpr == AtomExpr.True ? AtomExpr.False : throw new Exception(),
-                        NullExpr nullExpr => AtomExpr.True,
-                        _ => throw new Exception(),
-                    };
-
-                    return new(result, ctx);
-                }
-            )
-        );
-
         Func<Executor, Context, IList<IExpression>, InvokeResult> DoIncDec(Func<float, float> op)
         {
             return (executor, ctx, args) =>
@@ -301,6 +275,32 @@ public record Scope(Scope? Parent, Dictionary<string, IExpression> Data)
          * (1- x)
          */
         rootScope.Data["1-"] = new FnExpr(rootScope, new NativeFnExprBody(DoIncDec(val => val - 1)));
+
+        /*
+         * (not T)
+         */
+        rootScope.Data["not"] = new FnExpr(
+            rootScope,
+            new NativeFnExprBody(
+                (executor, ctx, args) =>
+                {
+                    if (args.Count != 1)
+                    {
+                        throw new Exception();
+                    }
+
+                    var unwrapped = executor.Execute(ctx, args[0], false);
+                    IExpression result = unwrapped.Result switch
+                    {
+                        AtomExpr atomExpr => atomExpr == AtomExpr.True ? AtomExpr.False : throw new Exception(),
+                        NullExpr nullExpr => AtomExpr.True,
+                        _ => throw new Exception(),
+                    };
+
+                    return new(result, ctx);
+                }
+            )
+        );
     }
 
     public bool TryGetValueRecursively(string name, out IExpression expr, bool ExpandAtoms = false)
