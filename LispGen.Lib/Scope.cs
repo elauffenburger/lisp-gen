@@ -231,6 +231,32 @@ public record Scope(Scope? Parent, Dictionary<string, IExpression> Data)
          * (<= x y)
          */
         rootScope.Data["<="] = new FnExpr(rootScope, new NativeFnExprBody(DoComparison((a, b) => a <= b)));
+
+        /*
+         * (not T)
+         */
+        rootScope.Data["not"] = new FnExpr(
+            rootScope,
+            new NativeFnExprBody(
+                (executor, ctx, args) =>
+                {
+                    if (args.Count != 1)
+                    {
+                        throw new Exception();
+                    }
+
+                    var unwrapped = executor.Execute(ctx, args[0], false);
+                    IExpression result = unwrapped.Result switch
+                    {
+                        AtomExpr atomExpr => atomExpr == AtomExpr.True ? AtomExpr.False : throw new Exception(),
+                        NullExpr nullExpr => AtomExpr.True,
+                        _ => throw new Exception(),
+                    };
+
+                    return new(result, ctx);
+                }
+            )
+        );
     }
 
     public bool TryGetValueRecursively(string name, out IExpression expr, bool ExpandAtoms = false)
