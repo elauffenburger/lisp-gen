@@ -233,6 +233,16 @@ public record Scope(Scope? Parent, Dictionary<string, IExpression> Data)
         rootScope.Data["<="] = new FnExpr(rootScope, new NativeFnExprBody(DoComparison((a, b) => a <= b)));
 
         /*
+         * (> x y)
+         */
+        rootScope.Data[">"] = new FnExpr(rootScope, new NativeFnExprBody(DoComparison((a, b) => a > b)));
+
+        /*
+         * (>= x y)
+         */
+        rootScope.Data[">="] = new FnExpr(rootScope, new NativeFnExprBody(DoComparison((a, b) => a >= b)));
+
+        /*
          * (not T)
          */
         rootScope.Data["not"] = new FnExpr(
