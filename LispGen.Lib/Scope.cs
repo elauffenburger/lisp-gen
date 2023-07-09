@@ -187,40 +187,50 @@ public record Scope(Scope? Parent, Dictionary<string, IExpression> Data)
          */
         rootScope.Data["*"] = new FnExpr(rootScope, new NativeFnExprBody(DoArithmetic((total, val) => total * val)));
 
+        Func<Executor, Context, IList<IExpression>, InvokeResult> DoComparison(Func<float, float, bool> op)
+        {
+            return (executor, ctx, args) =>
+            {
+                float? compareTo = null;
+                foreach (var arg in args)
+                {
+                    var unwrapped = executor.Execute(ctx, arg);
+                    if (unwrapped.Result is not NumExpr)
+                    {
+                        throw new Exception();
+                    }
+
+                    var val = ((NumExpr)unwrapped.Result).Value;
+                    if (compareTo == null)
+                    {
+                        compareTo = val;
+                        continue;
+                    }
+
+                    if (!op(compareTo.Value, val))
+                    {
+                        return new(AtomExpr.False, ctx);
+                    }
+                }
+
+                return new(AtomExpr.True, ctx);
+            };
+        }
+
         /*
          * (= x y)
          */
-        rootScope.Data["="] = new FnExpr(
-            rootScope,
-            new NativeFnExprBody(
-                (executor, ctx, args) =>
-                {
-                    float? expected = null;
-                    foreach (var arg in args)
-                    {
-                        var unwrapped = executor.Execute(ctx, arg);
-                        if (unwrapped.Result is not NumExpr)
-                        {
-                            throw new Exception();
-                        }
+        rootScope.Data["="] = new FnExpr(rootScope, new NativeFnExprBody(DoComparison((a, b) => a == b)));
 
-                        var val = ((NumExpr)unwrapped.Result).Value;
-                        if (expected == null)
-                        {
-                            expected = val;
-                            continue;
-                        }
+        /*
+         * (< x y)
+         */
+        rootScope.Data["<"] = new FnExpr(rootScope, new NativeFnExprBody(DoComparison((a, b) => a < b)));
 
-                        if (val != expected)
-                        {
-                            return new(AtomExpr.False, ctx);
-                        }
-                    }
-
-                    return new(AtomExpr.True, ctx);
-                }
-            )
-        );
+        /*
+         * (<= x y)
+         */
+        rootScope.Data["<="] = new FnExpr(rootScope, new NativeFnExprBody(DoComparison((a, b) => a <= b)));
     }
 
     public bool TryGetValueRecursively(string name, out IExpression expr, bool ExpandAtoms = false)
