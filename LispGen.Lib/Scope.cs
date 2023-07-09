@@ -207,7 +207,7 @@ public record Scope(Scope? Parent, Dictionary<string, IExpression> Data)
          */
         rootScope.Data["/"] = new FnExpr(rootScope, new NativeFnExprBody(DoArithmetic((total, val) => total / val)));
 
-        Func<Executor, Context, IList<IExpression>, InvokeResult> DoComparison(Func<float, float, bool> op)
+        Func<Executor, Context, IList<IExpression>, InvokeResult> DoNumComparison(Func<float, float, bool> op)
         {
             return (executor, ctx, args) =>
             {
@@ -240,27 +240,27 @@ public record Scope(Scope? Parent, Dictionary<string, IExpression> Data)
         /*
          * (= x y)
          */
-        rootScope.Data["="] = new FnExpr(rootScope, new NativeFnExprBody(DoComparison((a, b) => a == b)));
+        rootScope.Data["="] = new FnExpr(rootScope, new NativeFnExprBody(DoNumComparison((a, b) => a == b)));
 
         /*
          * (< x y)
          */
-        rootScope.Data["<"] = new FnExpr(rootScope, new NativeFnExprBody(DoComparison((a, b) => a < b)));
+        rootScope.Data["<"] = new FnExpr(rootScope, new NativeFnExprBody(DoNumComparison((a, b) => a < b)));
 
         /*
          * (<= x y)
          */
-        rootScope.Data["<="] = new FnExpr(rootScope, new NativeFnExprBody(DoComparison((a, b) => a <= b)));
+        rootScope.Data["<="] = new FnExpr(rootScope, new NativeFnExprBody(DoNumComparison((a, b) => a <= b)));
 
         /*
          * (> x y)
          */
-        rootScope.Data[">"] = new FnExpr(rootScope, new NativeFnExprBody(DoComparison((a, b) => a > b)));
+        rootScope.Data[">"] = new FnExpr(rootScope, new NativeFnExprBody(DoNumComparison((a, b) => a > b)));
 
         /*
          * (>= x y)
          */
-        rootScope.Data[">="] = new FnExpr(rootScope, new NativeFnExprBody(DoComparison((a, b) => a >= b)));
+        rootScope.Data[">="] = new FnExpr(rootScope, new NativeFnExprBody(DoNumComparison((a, b) => a >= b)));
 
         Func<Executor, Context, IList<IExpression>, InvokeResult> DoIncDec(Func<float, float> op)
         {
