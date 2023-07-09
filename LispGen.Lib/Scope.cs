@@ -273,29 +273,30 @@ public record Scope(Scope? Parent, Dictionary<string, IExpression> Data)
             )
         );
 
+        Func<Executor, Context, IList<IExpression>, InvokeResult> DoIncDec(Func<float, float> op)
+        {
+            return (executor, ctx, args) =>
+            {
+                if (args.Count != 1)
+                {
+                    throw new Exception();
+                }
+
+                var unwrapped = executor.Execute(ctx, args[0], false);
+                if (unwrapped.Result is not NumExpr numExpr)
+                {
+                    throw new Exception();
+                }
+
+                return new(new NumExpr(op(numExpr.Value)), ctx);
+            };
+        }
+
         /*
          * (1+ x)
          */
-        rootScope.Data["1+"] = new FnExpr(
-            rootScope,
-            new NativeFnExprBody(
-                (executor, ctx, args) =>
-                {
-                    if (args.Count != 1)
-                    {
-                        throw new Exception();
-                    }
+        rootScope.Data["1+"] = new FnExpr(rootScope, new NativeFnExprBody(DoIncDec(val => val + 1)));
 
-                    var unwrapped = executor.Execute(ctx, args[0], false);
-                    if (unwrapped.Result is not NumExpr numExpr)
-                    {
-                        throw new Exception();
-                    }
-
-                    return new(new NumExpr(numExpr.Value + 1), ctx);
-                }
-            )
-        );
     }
 
     public bool TryGetValueRecursively(string name, out IExpression expr, bool ExpandAtoms = false)
