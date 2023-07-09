@@ -291,39 +291,41 @@ public record Scope(Scope? Parent, Dictionary<string, IExpression> Data)
          */
         rootScope.Data["1-"] = new FnExpr(rootScope, new NativeFnExprBody(DoIncDec(val => val - 1)));
 
+        Func<Executor, Context, IList<IExpression>, InvokeResult> DoBoolComp(Func<bool, ValueTuple<bool, bool>> op)
+        {
+            return (executor, ctx, args) =>
+            {
+                if (args.Count == 0)
+                {
+                    return new(AtomExpr.False, ctx);
+                }
+
+                bool? result = null;
+                foreach (var arg in args)
+                {
+                    var unwrapped = executor.Execute(ctx, arg, false);
+                    var val = unwrapped.Result switch
+                    {
+                        AtomExpr atomExpr => atomExpr == AtomExpr.True ? true : throw new Exception(),
+                        NullExpr nullExpr => false,
+                        _ => throw new Exception(),
+                    };
+
+                    (result, var done) = op(val);
+                    if (done)
+                    {
+                        return new(result.Value ? AtomExpr.True : AtomExpr.False, ctx);
+                    }
+                }
+
+                return new(result!.Value ? AtomExpr.True : AtomExpr.False, ctx);
+            };
+        }
+
         /*
          * (and T)
          */
-        rootScope.Data["and"] = new FnExpr(
-            rootScope,
-            new NativeFnExprBody(
-                (executor, ctx, args) =>
-                {
-                    if (args.Count == 0)
-                    {
-                        return new(AtomExpr.False, ctx);
-                    }
-
-                    foreach (var arg in args)
-                    {
-                        var unwrapped = executor.Execute(ctx, arg, false);
-                        var val = unwrapped.Result switch
-                        {
-                            AtomExpr atomExpr => atomExpr == AtomExpr.True ? true : throw new Exception(),
-                            NullExpr nullExpr => false,
-                            _ => throw new Exception(),
-                        };
-
-                        if (!val)
-                        {
-                            return new(AtomExpr.False, ctx);
-                        }
-                    }
-
-                    return new(AtomExpr.True, ctx);
-                }
-            )
-        );
+        rootScope.Data["and"] = new FnExpr(rootScope, new NativeFnExprBody(DoBoolComp(val => val ? (true, false) : (false, true))));
 
         /*
          * (not T)
