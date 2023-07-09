@@ -1,0 +1,5 @@
+(do (assert (or T T) t "true or true should be true")
+    (assert (or (= 42 42) T) t "true or true should be true")
+    (assert (or T NIL) t "true or false should be true")
+    (assert (or T (= 1 2)) t "true or false should be true")
+    (assert (not (or NIL NIL)) t "false or false should be false"))

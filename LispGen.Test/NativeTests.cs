@@ -17,6 +17,7 @@ public class NativeTests
         "math.inc.lisp",
         "math.lt.lisp",
         "math.lte.lisp",
+        "math.or.lisp",
         "math.plus.lisp",
         "math.sub.lisp",
         "math.times.lisp"

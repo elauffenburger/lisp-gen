@@ -328,6 +328,11 @@ public record Scope(Scope? Parent, Dictionary<string, IExpression> Data)
         rootScope.Data["and"] = new FnExpr(rootScope, new NativeFnExprBody(DoBoolComp(val => val ? (true, false) : (false, true))));
 
         /*
+         * (or T)
+         */
+        rootScope.Data["or"] = new FnExpr(rootScope, new NativeFnExprBody(DoBoolComp(val => val ? (true, true) : (false, false))));
+
+        /*
          * (not T)
          */
         rootScope.Data["not"] = new FnExpr(
