@@ -15,6 +15,7 @@ public record Scope(Scope? Parent, Dictionary<string, IExpression> Data)
 
     private static void AddPrimitives(Scope rootScope)
     {
+        rootScope.Data["t"] = AtomExpr.True;
         rootScope.Data["T"] = AtomExpr.True;
         rootScope.Data["NIL"] = NullExpr.Instance;
     }
@@ -31,9 +32,23 @@ public record Scope(Scope? Parent, Dictionary<string, IExpression> Data)
                 var testResult = executor.Execute(ctx, args[0]);
                 if (!IExpression.IsTruthy(testResult.Result))
                 {
-                    if (args.Count < 2 || !args[1].Equals(new AtomExpr("t")) || args[2] is not StringExpr msg)
+                    // If we don't have an error message, just throw an exception.
+                    if (args.Count < 2)
                     {
                         throw new Exception();
+                    }
+
+                    // If we shouldn't _use_ the error message (if it's even there), just throw an exception.
+                    var useMessage = executor.Execute(ctx, args[1]);
+                    if (!IExpression.IsTruthy(useMessage.Result))
+                    {
+                        throw new Exception();
+                    }
+
+                    // If the arg in the error message position isn't a string, bail.
+                    if (args[2] is not StringExpr msg)
+                    {
+                        throw new Exception("argument in message position was not a string");
                     }
 
                     if (args.Count > 3)
