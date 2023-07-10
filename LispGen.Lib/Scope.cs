@@ -9,6 +9,7 @@ public record Scope(Scope? Parent, Dictionary<string, IExpression> Data)
         AddPrimitives(rootScope);
         AddCoreOps(rootScope);
         AddMathOps(rootScope);
+        AddConsOps(rootScope);
 
         return rootScope;
     }
@@ -410,6 +411,29 @@ public record Scope(Scope? Parent, Dictionary<string, IExpression> Data)
                     }
 
                     return new(AtomExpr.True, ctx);
+                }
+            )
+        );
+    }
+
+    private static void AddConsOps(Scope rootScope)
+    {
+        rootScope.Data["list"] = new FnExpr(
+            rootScope,
+            new NativeFnExprBody(
+                (executor, ctx, args) =>
+                {
+                    var list = new List<IExpression>(args.Count);
+
+                    var currCtx = ctx;
+                    foreach (var arg in args)
+                    {
+                        var result = executor.Execute(currCtx, arg);
+                        list.Add(result.Result);
+                        currCtx = result.NewContext;
+                    }
+
+                    return new(new ListExpr(list), currCtx);
                 }
             )
         );
