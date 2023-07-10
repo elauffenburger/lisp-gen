@@ -67,7 +67,7 @@ public class Parser
         var result = ch.Value switch
         {
             '(' => ParseListExpression(),
-            '\'' => new QuotedExpr(ParseExpression()!),
+            '\'' => ParseQuotedExpr(),
             '"' => ParseStringExpr(),
             ';' => ChompCommentAndReparse(),
             _ => ParseAtomOrNumber(),
@@ -207,5 +207,15 @@ public class Parser
         }
 
         return result.Length == 0 ? null : result.ToString();
+    }
+
+    private QuotedExpr ParseQuotedExpr()
+    {
+        if (Next() != '\'')
+        {
+            throw new Exception();
+        }
+
+        return new QuotedExpr(ParseExpression()!);
     }
 }
