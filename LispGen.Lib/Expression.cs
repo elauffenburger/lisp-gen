@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using System.Text;
 
 namespace LispGen.Lib;
@@ -5,6 +6,38 @@ namespace LispGen.Lib;
 public interface IExpression
 {
     public static bool IsTruthy(IExpression expr) => !expr.Equals(AtomExpr.False);
+}
+
+public class ExpressionEqualityComparer : IEqualityComparer<IExpression>
+{
+    public readonly static ExpressionEqualityComparer Instance = new();
+
+    public bool Equals(IExpression? l, IExpression? r)
+    {
+        if (l == null && r == null)
+        {
+            return true;
+        }
+
+        if ((l != null && r == null) || (l == null && r != null))
+        {
+            return false;
+        }
+
+        if (l!.GetType() != r!.GetType())
+        {
+            return false;
+        }
+
+        return (l, r) switch
+        {
+            (ListExpr(var xs), ListExpr(var ys)) => xs.Count == ys.Count && xs.Zip(ys).All((el) => Equals(el.First, el.Second)),
+            (QuotedExpr x, QuotedExpr y) => Equals(x.Expression, y.Expression),
+            _ => l.Equals(r)
+        };
+    }
+
+    public int GetHashCode([DisallowNull] IExpression obj) => obj.GetHashCode();
 }
 
 public record AtomExpr(string Name) : IExpression
