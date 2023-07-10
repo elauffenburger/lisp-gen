@@ -11,18 +11,12 @@ public class Executor
 {
     public InvokeResult Execute(Context ctx, IExpression expr, bool expandAtoms = false)
     {
-        var result = expr switch
+        return expr switch
         {
             QuotedExpr(var inner) => new(inner, ctx),
             ListExpr list => ExecuteListExpr(ctx, list),
-            AtomExpr atom => new InvokeResult(ctx.Scope.TryGetValueRecursively(atom.Name, out var val, expandAtoms) ? val! : NullExpr.Instance, ctx),
+            AtomExpr atom => ExecuteAtomExpr(ctx, atom, expandAtoms),
             _ => new(expr, ctx)
-        };
-
-        return result.Result switch
-        {
-            ListExpr list => Execute(ctx, list),
-            _ => result
         };
     }
 
@@ -35,6 +29,17 @@ public class Executor
         }
 
         return Invoke(ctx, exprs.First(), exprs.Skip(1).ToList());
+    }
+
+    private InvokeResult ExecuteAtomExpr(Context ctx, AtomExpr atom, bool expand)
+    {
+        var result = new InvokeResult(ctx.Scope.TryGetValueRecursively(atom.Name, out var val, expand) ? val! : NullExpr.Instance, ctx);
+
+        return result.Result switch
+        {
+            ListExpr list => ExecuteListExpr(result.NewContext, list),
+            _ => result,
+        };
     }
 
     private InvokeResult Invoke(Context ctx, IExpression head, IList<IExpression> rest)
