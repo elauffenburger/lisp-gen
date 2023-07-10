@@ -377,5 +377,41 @@ public record Scope(Scope? Parent, Dictionary<string, IExpression> Data)
                 }
             )
         );
+
+        /*
+         * (equal x y)
+         */
+        rootScope.Data["equal"] = new FnExpr(
+            rootScope,
+            new NativeFnExprBody(
+                (executor, ctx, args) =>
+                {
+                    if (args.Count == 0)
+                    {
+                        return new(AtomExpr.False, ctx);
+                    }
+
+                    IExpression? result = null;
+                    foreach (var arg in args)
+                    {
+                        var unwrapped = executor.Execute(ctx, arg, false);
+                        var val = unwrapped.Result;
+
+                        if (result == null)
+                        {
+                            result = val;
+                            continue;
+                        }
+
+                        if (!ExpressionEqualityComparer.Instance.Equals(result, val))
+                        {
+                            return new(AtomExpr.False, ctx);
+                        }
+                    }
+
+                    return new(AtomExpr.True, ctx);
+                }
+            )
+        );
     }
 }

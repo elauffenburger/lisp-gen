@@ -12,6 +12,7 @@ public class NativeTests
         "math.dec.lisp",
         "math.div.lisp",
         "math.eq.lisp",
+        "math.equal.lisp",
         "math.gt.lisp",
         "math.gte.lisp",
         "math.inc.lisp",
